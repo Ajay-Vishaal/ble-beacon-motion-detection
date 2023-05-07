@@ -1,33 +1,21 @@
-# Import necessary libraries
-from bluepy.btle import Peripheral, UUID
-import struct
+# Sample packets
+packets = [
+    '0201060303E1FF1216E1FFA10364FFF4000FFF003772A33F23AC',
+    '0201061AFF4C00021553594F4F4B534F4349414C444953544500000000E8',
+    '0201060303E1FF1216E1FFA10364FFF60011FF003772A33F23AC',
+    '0201061AFF4C00021553594F4F4B534F4349414C444953544500000000E8',
+    '0201060303E1FF1216E1FFA10364FFF40011FF033772A33F23AC',
+    '0201061AFF4C00021553594F4F4B534F4349414C444953544500000000E8'
+]
 
-# UUIDs for Accelerometer Service and Characteristics
-ACCELEROMETER_SERVICE_UUID = UUID('0112233445566778899AABBCCDDEEFF0')
-ACCELEROMETER_DATA_UUID = UUID('0112233445566778899AABBCCDDEEFF0')
+for packet in packets:
+    # Accelerometer packet
+    if packet.startswith('0201060303E1FF'):
+        x, y, z = int(packet[26:30], 16), int(packet[30:34], 16), int(packet[34:38], 16)
+        stationary = x == y == z == 0
+        print(f"Accelerometer {'Stationary' if stationary else 'Moving'}: x={x}, y={y}, z={z}")
 
-try:
-    # Connect to BLE device
-    peripheral = Peripheral('00:90:78:56:34:12')
-
-    # Get accelerometer service and data characteristics
-    accelerometer_service = peripheral.getServiceByUUID(ACCELEROMETER_SERVICE_UUID)
-    accelerometer_data = accelerometer_service.getCharacteristics(ACCELEROMETER_DATA_UUID)[0]
-
-    # Read accelerometer data
-    data = accelerometer_data.read()
-
-    # Convert raw data to acceleration values
-    x, y, z = struct.unpack('<hhh', data)
-
-    # Detect movement
-    if abs(x) > 100 or abs(y) > 100 or abs(z) > 100:
-        print("The tag is moving")
-    else:
-        print("The tag is stationary")
-
-    # Disconnect from BLE device
-    peripheral.disconnect()
-
-except Exception as e:
-    print(f'Error connecting to BLE device: {e}')
+    # iBeacon packet
+    elif packet.startswith('0201061AFF4C000215'):
+        mac_address = ':'.join([packet[i:i+2] for i in range(38, 50, 2)])
+        print(f"MAC address: {mac_address}")
